@@ -242,6 +242,63 @@ class AuthService {
     }
   }
 
+  static Future<AuthResult> updateUserProfile({
+    required String token,
+    required int age,
+    required String gender,
+    required String bloodGroup,
+    double? heightCm,
+    double? weightKg,
+    required List<String> conditions,
+    bool onboardingCompleted = false,
+  }) async {
+    final url = Uri.parse('${AppConfig.apiBaseUrl}/api/users/profile');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'age': age,
+          'gender': gender,
+          'bloodGroup': bloodGroup,
+          'physicalDetails': {
+            'heightCm': heightCm,
+            'weightKg': weightKg,
+          },
+          'onboardingCompleted': onboardingCompleted,
+          'medicalHistory': {
+            'conditions': conditions,
+          },
+        }),
+      );
+
+      final payload = _decodeJsonSafe(response.body);
+      final success = payload['success'] == true || response.statusCode == 200;
+      final message = (payload['message'] ??
+              (success
+                  ? 'Profile updated successfully.'
+                  : _messageForStatus(response.statusCode, 'Unable to update profile.')))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        user: payload['data'] is Map<String, dynamic>
+            ? payload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message: 'Unable to update profile. ${_friendlyError(error)}',
+      );
+    }
+  }
+
   static String _friendlyError(Object error) {
     final message = error.toString();
     if (message.contains('Connection refused') || message.contains('SocketException')) {
