@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/auth_service.dart';
+import '../../onboarding/presentation/user_onboarding_screen.dart';
+import '../../dashboard/presentation/user_dashboard_screen.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
@@ -67,8 +69,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
+      final user = result.user ?? <String, dynamic>{};
+      final onboardingDone = user['onboardingCompleted'] == true;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => onboardingDone
+              ? UserDashboardScreen(user: user)
+              : UserOnboardingScreen(
+                  token: result.token ?? '',
+                  user: user,
+                ),
+        ),
       );
     } else {
       setState(() {
