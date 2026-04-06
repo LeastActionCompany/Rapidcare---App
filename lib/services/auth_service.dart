@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -10,12 +11,14 @@ class AuthResult {
     required this.message,
     this.token,
     this.user,
+    this.data,
   });
 
   final bool success;
   final String message;
   final String? token;
   final Map<String, dynamic>? user;
+  final Map<String, dynamic>? data;
 }
 
 class AuthService {
@@ -295,6 +298,280 @@ class AuthService {
       return AuthResult(
         success: false,
         message: 'Unable to update profile. ${_friendlyError(error)}',
+      );
+    }
+  }
+
+  static Future<AuthResult> fetchUserProfile({
+    required String token,
+  }) async {
+    final url = Uri.parse('${AppConfig.apiBaseUrl}/api/users/profile');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final payload = _decodeJsonSafe(response.body);
+      final success = payload['success'] == true || response.statusCode == 200;
+      final message = (payload['message'] ??
+              (success
+                  ? 'Profile loaded successfully.'
+                  : _messageForStatus(response.statusCode, 'Unable to load profile.')))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        user: payload['data'] is Map<String, dynamic>
+            ? payload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message: 'Unable to load profile. ${_friendlyError(error)}',
+      );
+    }
+  }
+
+  static Future<AuthResult> updateUserProfileExtended({
+    required String token,
+    required Map<String, dynamic> payload,
+  }) async {
+    final url = Uri.parse('${AppConfig.apiBaseUrl}/api/users/profile');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      );
+
+      final responsePayload = _decodeJsonSafe(response.body);
+      final success = responsePayload['success'] == true || response.statusCode == 200;
+      final message = (responsePayload['message'] ??
+              (success
+                  ? 'Profile updated successfully.'
+                  : _messageForStatus(response.statusCode, 'Unable to update profile.')))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        user: responsePayload['data'] is Map<String, dynamic>
+            ? responsePayload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message: 'Unable to update profile. ${_friendlyError(error)}',
+      );
+    }
+  }
+
+  static Future<AuthResult> fetchUserDashboard({
+    required String token,
+  }) async {
+    final url = Uri.parse('${AppConfig.apiBaseUrl}/api/users/dashboard');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final payload = _decodeJsonSafe(response.body);
+      final success = payload['success'] == true || response.statusCode == 200;
+      final message = (payload['message'] ??
+              (success
+                  ? 'Dashboard loaded successfully.'
+                  : _messageForStatus(response.statusCode, 'Unable to load dashboard.')))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        data: payload['data'] is Map<String, dynamic>
+            ? payload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message: 'Unable to load dashboard. ${_friendlyError(error)}',
+      );
+    }
+  }
+
+  static Future<AuthResult> triggerSos({
+    required String token,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final url = Uri.parse('${AppConfig.apiBaseUrl}/api/emergency/sos');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'location': {
+            'type': 'Point',
+            'coordinates': [longitude, latitude],
+          },
+        }),
+      );
+
+      final payload = _decodeJsonSafe(response.body);
+      final success = payload['success'] == true || response.statusCode == 201;
+      final message = (payload['message'] ??
+              (success
+                  ? 'SOS triggered successfully.'
+                  : _messageForStatus(response.statusCode, 'Unable to trigger SOS.')))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        data: payload['data'] is Map<String, dynamic>
+            ? payload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message: 'Unable to trigger SOS. ${_friendlyError(error)}',
+      );
+    }
+  }
+
+  static Future<AuthResult> fetchMyCaregiverVerificationRequest({
+    required String token,
+  }) async {
+    final url = Uri.parse('${AppConfig.apiBaseUrl}/api/caregivers/verification-request/me');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final payload = _decodeJsonSafe(response.body);
+      final success = payload['success'] == true || response.statusCode == 200;
+      final message = (payload['message'] ??
+              (success
+                  ? 'Verification request loaded.'
+                  : _messageForStatus(
+                      response.statusCode,
+                      'Unable to load caregiver verification request.',
+                    )))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        data: payload['data'] is Map<String, dynamic>
+            ? payload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message:
+            'Unable to load caregiver verification request. ${_friendlyError(error)}',
+      );
+    }
+  }
+
+  static Future<AuthResult> submitCaregiverVerificationRequest({
+    required String token,
+    required String fullName,
+    required String phone,
+    required String email,
+    required String yearsExperience,
+    required String certificationType,
+    required List<String> skills,
+    required String hospitalName,
+    required File governmentId,
+    required File paramedicCertificate,
+    required File trainingCertificates,
+    required File hospitalIdCard,
+    required File profilePhoto,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${AppConfig.apiBaseUrl}/api/caregivers/verification-request'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['fullName'] = fullName.trim();
+    request.fields['phone'] = phone.trim();
+    request.fields['email'] = email.trim();
+    request.fields['yearsExperience'] = yearsExperience.trim();
+    request.fields['certificationType'] = certificationType.trim();
+    request.fields['hospitalName'] = hospitalName.trim();
+    request.fields['skills'] = skills.join(',');
+
+    request.files.add(await http.MultipartFile.fromPath('governmentId', governmentId.path));
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'paramedicCertificate',
+        paramedicCertificate.path,
+      ),
+    );
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'trainingCertificates',
+        trainingCertificates.path,
+      ),
+    );
+    request.files.add(await http.MultipartFile.fromPath('hospitalIdCard', hospitalIdCard.path));
+    request.files.add(await http.MultipartFile.fromPath('profilePhoto', profilePhoto.path));
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final payload = _decodeJsonSafe(response.body);
+      final success = payload['success'] == true || response.statusCode == 200 || response.statusCode == 201;
+      final message = (payload['message'] ??
+              (success
+                  ? 'Verification request submitted successfully.'
+                  : _messageForStatus(
+                      response.statusCode,
+                      'Unable to submit caregiver verification request.',
+                    )))
+          .toString();
+
+      return AuthResult(
+        success: success,
+        message: message,
+        data: payload['data'] is Map<String, dynamic>
+            ? payload['data'] as Map<String, dynamic>
+            : null,
+      );
+    } catch (error) {
+      return AuthResult(
+        success: false,
+        message:
+            'Unable to submit caregiver verification request. ${_friendlyError(error)}',
       );
     }
   }

@@ -8,10 +8,14 @@ class UserOnboardingScreen extends StatefulWidget {
     super.key,
     required this.token,
     required this.user,
+    this.headerTitle,
+    this.headerSubtitle,
   });
 
   final String token;
   final Map<String, dynamic> user;
+  final String? headerTitle;
+  final String? headerSubtitle;
 
   @override
   State<UserOnboardingScreen> createState() => _UserOnboardingScreenState();
@@ -153,7 +157,7 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => UserDashboardScreen(user: updatedUser),
+        builder: (_) => UserDashboardScreen(user: updatedUser, token: widget.token),
       ),
     );
   }
@@ -169,7 +173,7 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => UserDashboardScreen(user: widget.user),
+        builder: (_) => UserDashboardScreen(user: widget.user, token: widget.token),
       ),
     );
   }
@@ -194,7 +198,7 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Complete Your RapidCare Profile',
+                    widget.headerTitle ?? 'Complete Your RapidCare Profile',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: const Color(0xFF0D4C9A),
@@ -203,7 +207,7 @@ class _UserOnboardingScreenState extends State<UserOnboardingScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _stepSubtitle(),
+                    widget.headerSubtitle ?? _stepSubtitle(),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Color(0xFF52607A),

@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => onboardingDone
-              ? UserDashboardScreen(user: user)
+              ? UserDashboardScreen(user: user, token: result.token)
               : UserOnboardingScreen(
                   token: result.token ?? '',
                   user: user,
